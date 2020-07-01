@@ -1,6 +1,6 @@
 # Global
   - [X] Make simple floating box
-  - [ ] Display text with formatting
+  - [X] Display text
   - [ ] Create cli args for configuring
     - [ ] Position and dimensions
     - [ ] Percentage position and dimensions

@@ -41,17 +41,7 @@ XftColor to_xftcolor(const char *colorstr) {
 }
 
 
-void draw_text(char * text) {
-  /*if (fontinfo == NULL) {*/
-    /*if (count_error == 0) {*/
-      /*fprintf(stderr, "slock: Unable to load font \"%s\"\n", font_name);*/
-      /*fprintf(stderr, "slock: Try listing fonts with 'slock -f'\n");*/
-      /*count_error++;*/
-    /*}*/
-    /*return;*/
-  /*}*/
-
-  /*int tab_size = 8 * XTextWidth(fontinfo, " ", 1);*/
+void draw_popup_text(char * text) {
   int len;
 
   XftDraw * xftdraw = XftDrawCreate(dpy, win,
@@ -67,7 +57,7 @@ void draw_text(char * text) {
 	XSetBackground(dpy, gc, fg_color.pixel);
 
   len = strlen(text);
-  XftDrawStringUtf8(xftdraw, &fg_color, fontset[0], 30, 30, (XftChar8 *) text, len);
+  XftDrawStringUtf8(xftdraw, &fg_color, fontset[0], padding_left, padding_top, (XftChar8 *) text, len);
 
   if (xftdraw) {
 		XftDrawDestroy(xftdraw);
@@ -94,7 +84,6 @@ void draw_popup() {
   XSelectInput(dpy, root, wa.event_mask);
   XSetWindowBorderWidth(dpy, win, border_width);
 
-  draw_text("Hello world");
   XMapRaised(dpy, win);
 }
 
@@ -149,7 +138,7 @@ int main() {
 
     switch (ev.type) {
       case Expose:
-        draw_text("Hello world");
+        draw_popup_text("Hello world");
         break;
       case VisibilityNotify:
         break;

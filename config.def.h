@@ -1,8 +1,8 @@
 
 static const char *fonts[] = {
-  "JetBrains Mono:size=8",
-  "Font Awesome 5 Free:size=7",
-  "Symbols Nerd Font:size=7",
+  "JetBrains Mono:size=10",
+  "Font Awesome 5 Free:size=10",
+  "Symbols Nerd Font:size=10",
 };
 
 // Default config values
@@ -11,9 +11,9 @@ static int y = 30;
 static int width = 400;
 static int height = 100;
 
-static int padding_top = 10;
+static int padding_top = 30;
 static int padding_bottom = 100;
-static int padding_left = 0;
+static int padding_left = 20;
 static int padding_right = 50;
 
 static const char *background = "#520053";
