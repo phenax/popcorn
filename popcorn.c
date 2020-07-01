@@ -19,7 +19,7 @@
 static Display *dpy;
 static Window root, win;
 static int screen;
-XColor bg_color;
+XColor bg_color, border_color;
 
 int error_handler(Display *disp, XErrorEvent *xe) {
   switch(xe->error_code) {
@@ -38,6 +38,7 @@ void draw_stuff() {
 
   wa.override_redirect = 1;
 	wa.background_pixel = bg_color.pixel;
+	wa.border_pixel = border_color.pixel;
 
   win = XCreateWindow(dpy, root,
       x, y,
@@ -45,12 +46,14 @@ void draw_stuff() {
       0, DefaultDepth(dpy, screen),
       CopyFromParent,
       DefaultVisual(dpy, screen),
-      CWOverrideRedirect | CWBackPixel, &wa);
+      CWOverrideRedirect | CWBackPixel | CWBorderPixel, &wa);
+
+  XSetWindowBorderWidth(dpy, win, border_width);
 
   XGCValues gr_values;
   gr_values.foreground = CWBackPixel;
   gr_values.background = CWBackPixel;
-  GC gc = XCreateGC(dpy, win, GCForeground + GCBackground, &gr_values);
+  GC gc = XCreateGC(dpy, win, GCForeground | GCBackground, &gr_values);
 
   XFillRectangle(dpy, win, gc, 0, 0, 20, 20);
   XFreeGC(dpy, gc);
@@ -62,6 +65,7 @@ void initialize_values() {
   int i, s_dimen;
 	XColor dummy;
 	XAllocNamedColor(dpy, DefaultColormap(dpy, screen), background, &bg_color, &dummy);
+	XAllocNamedColor(dpy, DefaultColormap(dpy, screen), border, &border_color, &dummy);
 
 	if (x < 0) {
     s_dimen = DisplayWidth(dpy, screen);
