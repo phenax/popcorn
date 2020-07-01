@@ -67,24 +67,26 @@ void initialize_values() {
 	XAllocNamedColor(dpy, DefaultColormap(dpy, screen), background, &bg_color, &dummy);
 	XAllocNamedColor(dpy, DefaultColormap(dpy, screen), border, &border_color, &dummy);
 
+	// Calculate auto height
+
 	if (x < 0) {
     s_dimen = DisplayWidth(dpy, screen);
-    x = s_dimen + x;
+    x = s_dimen - width + x;
   }
 
 	if (y < 0) {
     s_dimen = DisplayHeight(dpy, screen);
-    y = s_dimen + y;
+    y = s_dimen - height + y;
   }
 }
 
 int main() {
   XSetErrorHandler(error_handler);
 
-  int running = 10;
+  int running = 1;
 
   dpy = XOpenDisplay(0);
-  root = RootWindow(dpy, 0);
+  root = RootWindow(dpy, screen);
 
   initialize_values();
 
@@ -94,7 +96,7 @@ int main() {
   XEvent ev;
 	XSync(dpy, 0);
 
-  while (running && !XNextEvent(dpy, &ev)) {
+  while (running && XNextEvent(dpy, &ev)) {
     switch (ev.type) {
       case Expose:
         printf("Expose");

@@ -1,7 +1,7 @@
 
 // Default config values
-static int x = -450;
-static int y = 60;
+static int x = -30;
+static int y = 30;
 static int width = 400;
 static int height = 100;
 
