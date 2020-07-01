@@ -3,7 +3,7 @@
 
 include config.mk
 
-SRC = popcorn.c
+SRC = popcorn.c drw.c util.c
 OBJ = ${SRC:.c=.o}
 
 all: clean options popcorn

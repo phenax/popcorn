@@ -1,13 +1,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
+#include <strings.h>
+#include <pthread.h>
+
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#include <X11/Xft/Xft.h>
 
+#include "util.h"
+#include "drw.h"
 #include "config.h"
 
 #define LENGTH(X) (sizeof X / sizeof X[0])
 #define CLEANMASK(mask) (mask & ~LockMask & (ShiftMask|ControlMask|Mod1Mask|Mod2Mask|Mod3Mask|Mod4Mask|Mod5Mask))
+
+#define MAX_STRING_SIZE 500
 
 extern char** environ;
 
@@ -49,10 +58,139 @@ void spawn(char** command) {
 //   }
 // }
 
+static Display *dpy;
+static Window root, win;
+static Visual *visual;
+static int mon = -1, screen;
+static int depth;
+static Colormap cmap;
+static Drw *drw;
+
+int x = 10;
+int y = 10;
+int mw = 100;
+int mh = 100;
+int border_width = 1;
+int usergb = 0;
+
+char text[500];
+
+static void
+cleanup(void)
+{
+	size_t i;
+
+	XUngrabKey(dpy, AnyKey, AnyModifier, root);
+	/*for (i = 0; i < SchemeLast; i++)*/
+		/*free(scheme[i]);*/
+	drw_free(drw);
+	XSync(dpy, False);
+	XCloseDisplay(dpy);
+}
+
+static void*
+readstdin(void * runningptr)
+{
+  int *running = (int *) runningptr;
+
+	char buf[MAX_STRING_SIZE], *p;
+	size_t i, imax = 0, size = 0;
+	unsigned int tmpmax = 0;
+
+	/* read each line from stdin and add it to the item list */
+	for (i = 0; fgets(buf, sizeof buf, stdin); i++) {
+	  strcat(text, buf);
+	}
+
+	printf("Hello %s\n", text);
+  *running = 0;
+}
+
+
+static void
+xinitvisual()
+{
+	XVisualInfo *infos;
+	XRenderPictFormat *fmt;
+	int nitems;
+	int i;
+
+	XVisualInfo tpl = {
+		.screen = screen,
+		.depth = 32,
+		.class = TrueColor
+	};
+
+	long masks = VisualScreenMask | VisualDepthMask | VisualClassMask;
+
+	infos = XGetVisualInfo(dpy, masks, &tpl, &nitems);
+	visual = NULL;
+
+	for (i = 0; i < nitems; i++){
+		fmt = XRenderFindVisualFormat(dpy, infos[i].visual);
+		if (fmt->type == PictTypeDirect && fmt->direct.alphaMask) {
+			visual = infos[i].visual;
+			depth = infos[i].depth;
+			cmap = XCreateColormap(dpy, root, visual, AllocNone);
+			usergb = 1;
+			break;
+		}
+	}
+
+	XFree(infos);
+
+	if (!visual) {
+		visual = DefaultVisual(dpy, screen);
+		depth = DefaultDepth(dpy, screen);
+		cmap = DefaultColormap(dpy, screen);
+	}
+}
+
+
+void initialize() {
+	XWindowAttributes wa;
+
+  if (!(dpy = XOpenDisplay(NULL))) {
+    exit(1);
+  }
+
+	screen = DefaultScreen(dpy);
+	root = RootWindow(dpy, screen);
+
+	if (!XGetWindowAttributes(dpy, root, &wa)) {
+		exit(1);
+  }
+
+  xinitvisual();
+	drw = drw_create(dpy, screen, root, wa.width, wa.height, visual, depth, cmap);
+
+	/*if (!drw_fontset_create(drw, (const char**) fonts, LENGTH(fonts))) {*/
+    /*exit(1);*/
+  /*}*/
+
+  XSetWindowAttributes swa;
+  XClassHint ch = {"popcorn", "popcorn"};
+
+	/* create menu window */
+	swa.override_redirect = True;
+	swa.background_pixel = CWBackPixel;
+	swa.border_pixel = 0;
+	swa.colormap = cmap;
+	swa.event_mask = ExposureMask | KeyPressMask | VisibilityChangeMask;
+  win = XCreateWindow(dpy, root, x, y, mw, mh, border_width,
+                    depth, InputOutput, visual,
+                    CWOverrideRedirect | CWBackPixel | CWColormap |  CWEventMask | CWBorderPixel, &swa);
+	XSetWindowBorder(dpy, win, CWBackPixel);
+	XSetClassHint(dpy, win, &ch);
+  XMapRaised(dpy, win);
+
+  drw_resize(drw, mw, mh);
+}
+
 int main() {
   XSetErrorHandler(error_handler);
 
-  int running = 1, i = 0;
+  int running = 1;
 
   Display *dpy = XOpenDisplay(0);
   Window root = DefaultRootWindow(dpy);
@@ -62,15 +200,32 @@ int main() {
   //   bind_key(dpy, root, keys[i].mod, keys[i].key);
   // }
 
-  XSelectInput(dpy, root, KeyPressMask);
+  /*XSelectInput(dpy, root, KeyPressMask);*/
+
+  /*readstdin();*/
+  /* this variable is our reference to the second thread */
+  pthread_t inc_x_thread;
+
+  /* create a second thread which executes inc_x(&x) */
+  if(pthread_create(&inc_x_thread, NULL, readstdin, &x)) {
+    fprintf(stderr, "Error creating thread\n");
+    return 1;
+  }
+ 
+  initialize();
 
   /* main event loop */
   XEvent ev;
-  XSync(dpy, False);
-  while (running) {
-    XMaskEvent(dpy, KeyPressMask, &ev);
-
+  while (running && !XNextEvent(dpy, &ev)) {
     switch (ev.type) {
+      case Expose:
+        if (ev.xexpose.count == 0)
+          drw_map(drw, win, 0, 0, mw, mh);
+        break;
+      case VisibilityNotify:
+        if (ev.xvisibility.state != VisibilityUnobscured)
+          XRaiseWindow(dpy, win);
+        break;
       case KeyPress: {
         // keypress(dpy, root, &ev.xkey);
         break;
