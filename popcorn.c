@@ -32,6 +32,12 @@ int error_handler(Display *disp, XErrorEvent *xe) {
   return 1;
 }
 
+XColor to_xcolor(const char *colorstr) {
+  XColor dummy, ptr;
+	XAllocNamedColor(dpy, DefaultColormap(dpy, screen), colorstr, &ptr, &dummy);
+	return ptr;
+}
+
 void draw_stuff() {
   Window root_win;
   XSetWindowAttributes wa;
@@ -63,11 +69,11 @@ void draw_stuff() {
 
 void initialize_values() {
   int i, s_dimen;
-	XColor dummy;
-	XAllocNamedColor(dpy, DefaultColormap(dpy, screen), background, &bg_color, &dummy);
-	XAllocNamedColor(dpy, DefaultColormap(dpy, screen), border, &border_color, &dummy);
 
-	// Calculate auto height
+	border_color = to_xcolor(border);
+	bg_color = to_xcolor(background);
+
+	// TODO: Calculate auto height
 
 	if (x < 0) {
     s_dimen = DisplayWidth(dpy, screen);
