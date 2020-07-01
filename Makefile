@@ -18,7 +18,7 @@ options:
 	${CC} -c ${CFLAGS} $<
 
 config.h:
-	cp config.def.h config.h
+	cp config.def.h config.h;
 
 popcorn: ${OBJ}
 	${CC} -o $@ ${OBJ} ${LDFLAGS}
