@@ -10,12 +10,14 @@
 #include <X11/Xutil.h>
 #include <X11/Xft/Xft.h>
 
+#define VERSION "0.0.1"
+#define MAX_TEXT_SIZE 500
+
 #include "config.h"
 
 #define LENGTH(X) (sizeof X / sizeof X[0])
 #define CLEANMASK(mask) (mask & ~LockMask & (ShiftMask|ControlMask|Mod1Mask|Mod2Mask|Mod3Mask|Mod4Mask|Mod5Mask))
 
-#define MAX_STRING_SIZE 500
 
 Display *dpy;
 Window root, win;
@@ -24,7 +26,7 @@ int content_width, content_height;
 XftColor bg_color, border_color, fg_color;
 XftFont* fontset[5];
 
-char text[MAX_STRING_SIZE];
+char text[MAX_TEXT_SIZE];
 
 int error_handler(Display *disp, XErrorEvent *xe) {
   switch(xe->error_code) {
@@ -206,22 +208,65 @@ void draw_popup() {
 
 void* input_reader() {
   int i;
-  char buf[MAX_STRING_SIZE];
+  char buf[MAX_TEXT_SIZE];
 
   while (fgets(buf, sizeof buf, stdin)) {
-    strncat(text, buf, MAX_STRING_SIZE);
+    strcat(text, buf);
   }
 
   exit(0);
 }
 
-int main() {
+pthread_t reader_thread;
+
+void read_cli_args(int argc, char** argv) {
+  for (int i = 1; i < argc; i++) {
+		if (!strcmp(argv[i], "-v")) {
+			puts("popcorn-"VERSION);
+			exit(0);
+    } else if (!strcmp(argv[i],        "--fg")) {
+      foreground = argv[++i];
+    } else if (!strcmp(argv[i],        "--bg")) {
+      background = argv[++i];
+    } else if (!strcmp(argv[i],        "--border-color")) {
+      border = argv[++i];
+    } else if (!strcmp(argv[i],        "--border-size")) {
+      border_width = atoi(argv[++i]);
+    } else if (!strcmp(argv[i],        "-x")) {
+      x = atoi(argv[++i]);
+    } else if (!strcmp(argv[i],        "-y")) {
+      y = atoi(argv[++i]);
+    } else if (!strcmp(argv[i],        "--width")) {
+      width = atoi(argv[++i]);
+    } else if (!strcmp(argv[i],        "--height")) {
+      height = atoi(argv[++i]);       
+    } else if (!strcmp(argv[i],        "--padding-top")) {
+      padding_top = atoi(argv[++i]);
+    } else if (!strcmp(argv[i],        "--padding-bottom")) {
+      padding_bottom = atoi(argv[++i]);
+    } else if (!strcmp(argv[i],        "--padding-left")) {
+      padding_left = atoi(argv[++i]);
+    } else if (!strcmp(argv[i],        "--padding-right")) {
+      padding_right = atoi(argv[++i]);
+    } else if (!strcmp(argv[i],        "--line-height")) {
+      padding_right = atoi(argv[++i]);
+    } else if (!strcmp(argv[i],        "--font")) {
+      fonts[0] = argv[++i];
+    } else {
+      fprintf(stderr, "Invalid arg: %s\n", argv[i]);
+      exit(1);
+    }
+  }
+}
+
+int main(int argc, char** argv) {
+  read_cli_args(argc, argv);
+
   XSetErrorHandler(error_handler);
 
   dpy = XOpenDisplay(0);
   root = RootWindow(dpy, screen);
 
-  pthread_t reader_thread;
   pthread_create(&reader_thread, NULL, input_reader, 0);
 
   initialize_values();

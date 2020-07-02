@@ -2,7 +2,8 @@
   - [X] Make simple floating box
   - [X] Display text
   - [X] Simple word wrapping
-  - [ ] Read from stdin and keep alive till the stream is alive
+  - [X] Read from stdin and keep alive till the stream is alive
+  - [ ] Read from stream and update display asynchronously
   - [ ] Load multiple fonts
   - [ ] Window class and other properties
   - [ ] Fix word wrap issue for words bigger than content width
