@@ -9,10 +9,10 @@ static const char *fonts[] = {
 static int x = -30;
 static int y = 30;
 static int width = 400;
-static int height = 100;
+static int height = 0;
 
 static int padding_top = 20;
-static int padding_bottom = 100;
+static int padding_bottom = 20;
 static int padding_left = 20;
 static int padding_right = 20;
 

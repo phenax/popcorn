@@ -47,8 +47,8 @@ int get_textwidth(const char * text, unsigned int len) {
 	return ext.xOff;
 }
 
-void make_line_list(char* text, int length, int wrap_width) {
-	int i; //, length = strlen(text);
+int make_line_list(char* text, int length, int wrap_width) {
+	int i;
 	char buffer[length + 1];
 
   int lines_count = 0, bufflength = 0;
@@ -61,11 +61,12 @@ void make_line_list(char* text, int length, int wrap_width) {
       case '\0':
         width = get_textwidth(buffer, bufflength);
 
-        printf("%s\n", buffer);
+        /*printf("%s\n", buffer);*/
 
         if (width > wrap_width) {
           if (previous_space != 0) {
             text[previous_space] = '\n';
+            lines_count++;
 
             for (bufflength = 0; bufflength < i - previous_space; bufflength++) {
               buffer[bufflength] = text[bufflength + previous_space];
@@ -81,6 +82,7 @@ void make_line_list(char* text, int length, int wrap_width) {
         previous_space = i;
         break;
       case '\n':
+        lines_count++;
         buffer[0] = '\0';
         bufflength = 0;
         break;
@@ -89,6 +91,8 @@ void make_line_list(char* text, int length, int wrap_width) {
         buffer[bufflength] = '\0';
     }
   }
+
+  return lines_count + (strlen(buffer) > 0);
 }
 
 void draw_popup_text(char * text) {
@@ -113,17 +117,14 @@ void draw_popup_text(char * text) {
 
   int x = padding_left;
   int y = padding_top;
-  int content_width = width - padding_left - padding_right;
-  int height = padding_top + padding_bottom;
-
-  make_line_list(text, len, content_width);
+  int content_height = 0;
 
   y += fontset[0]->ascent;
   for (int i = 0; i <= len; i++) {
     if (text[i] == '\n' || text[i] == '\0') {
       XftDrawStringUtf8(xftdraw, &fg_color, fontset[0], x, y, (XftChar8 *) buffer, bufflen);
       y += line_height;
-      height += line_height;
+      content_height += line_height;
       buffer[0] = '\0';
       bufflen = 0;
       continue;
@@ -132,12 +133,6 @@ void draw_popup_text(char * text) {
     buffer[bufflen++] = text[i];
     buffer[bufflen] = '\0';
   }
-
-	XDrawRectangle(dpy, win, gc, padding_left, padding_top, content_width, height);
-
-  /*XWindowChanges props;*/
-  /*props.height = height;*/
-  /*XConfigureWindow(dpy, win, CWHeight, &props);*/
 
   if (xftdraw) {
 		XftDrawDestroy(xftdraw);
@@ -166,6 +161,10 @@ void draw_popup() {
   XMapRaised(dpy, win);
 }
 
+char text[] = "one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty twentyone twentytwo twentythree";
+
+int content_width, content_height;
+
 void initialize_values() {
   int i, s_dimen;
 
@@ -180,7 +179,17 @@ void initialize_values() {
     }
   }
 
-	// TODO: Calculate auto height
+  int len = strlen(text);
+  content_width = width - padding_left - padding_right;
+  int lines = 0;
+  lines = make_line_list(text, len, content_width);
+
+  if (height == 0) {
+    XWindowChanges props;
+    height = (lines * line_height) + padding_top + padding_bottom;
+    props.height = height;
+    XConfigureWindow(dpy, win, CWHeight, &props);
+  }
 
 	if (x < 0) {
     s_dimen = DisplayWidth(dpy, screen);
@@ -201,17 +210,9 @@ int main() {
   dpy = XOpenDisplay(0);
   root = RootWindow(dpy, screen);
 
-  /*sigchld(0);*/
   initialize_values();
 
   draw_popup();
-  
-  char text[] = "one";
-  /*make_line_list(text, 500);*/
-
-  /*printf("%s\n", text);*/
-
-  /*return 0;*/
 
   /* main event loop */
   XEvent ev;
