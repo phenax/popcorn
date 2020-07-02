@@ -18,9 +18,9 @@ int padding_right = 20;
 
 int line_height = 20;
 
-char* background = "#520053";
-char* foreground = "#5555ff";
+char* background = "#4e3aA3";
+char* foreground = "#d8dee9";
 
-char* border = "#ff5555";
-int border_width = 5;
+char* border = "#d8dee9";
+int border_width = 2;
 

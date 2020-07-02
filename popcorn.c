@@ -214,7 +214,6 @@ void create_popup_window() {
 
   XSetClassHint(dpy, win, &class);
 
-
   XMapRaised(dpy, win);
 }
 
