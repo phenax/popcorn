@@ -58,7 +58,7 @@ int word_wrap(char* text, int length, int wrap_width) {
   int width, previous_space = 0;
 
 	for(i = 0; i <= length; i++) {
-	  // TODO: Case when a word is too big
+	  // TODO: Case when a word is too big, currently it just overflows
 	  switch(text[i]) {
       case ' ':
       case '\0':
