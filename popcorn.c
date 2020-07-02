@@ -17,11 +17,14 @@
 
 #define MAX_STRING_SIZE 500
 
-static Display *dpy;
-static Window root, win;
-static int screen;
+Display *dpy;
+Window root, win;
+int screen;
+int content_width, content_height;
 XftColor bg_color, border_color, fg_color;
 XftFont * fontset[5];
+
+char text[] = "one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty twentyone twentytwo twentythree";
 
 int error_handler(Display *disp, XErrorEvent *xe) {
   switch(xe->error_code) {
@@ -73,6 +76,8 @@ int word_wrap(char* text, int length, int wrap_width) {
             }
           } else {
             text[i] = '\n';
+            buffer[0] = '\0';
+            bufflength = 0;
           }
 
           previous_space = 0;
@@ -143,10 +148,6 @@ void draw_popup_text(char * text) {
 		XftDrawDestroy(xftdraw);
   }
 }
-
-char text[] = "one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty twentyone twentytwo twentythree";
-
-int content_width, content_height;
 
 void initialize_values() {
   int i, s_dimen;
