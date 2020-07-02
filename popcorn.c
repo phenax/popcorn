@@ -139,6 +139,44 @@ void draw_popup_text(char * text) {
   }
 }
 
+char text[] = "one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty twentyone twentytwo twentythree";
+
+int content_width, content_height;
+
+void initialize_values() {
+  int i, s_dimen;
+
+	border_color = to_xftcolor(border);
+	bg_color = to_xftcolor(background);
+	fg_color = to_xftcolor(foreground);
+
+  for (i = 0; i < LENGTH(fonts); i++) {
+    if(!(fontset[i] = XftFontOpenName(dpy, screen, fonts[i]))) {
+      fprintf(stderr, "error, cannot load font from name: '%s'\n", fonts[i]);
+      exit(1);
+    }
+  }
+
+  int len = strlen(text);
+  int lines = 0;
+  content_width = width - padding_left - padding_right;
+  lines = make_line_list(text, len, content_width);
+
+  if (height == 0) {
+    height = (lines * line_height) + padding_top + padding_bottom;
+  }
+
+	if (x < 0) {
+    s_dimen = DisplayWidth(dpy, screen);
+    x = s_dimen - width + x;
+  }
+
+	if (y < 0) {
+    s_dimen = DisplayHeight(dpy, screen);
+    y = s_dimen - height + y;
+  }
+}
+
 void draw_popup() {
   XSetWindowAttributes wa;
 
@@ -159,47 +197,6 @@ void draw_popup() {
   XSetWindowBorderWidth(dpy, win, border_width);
 
   XMapRaised(dpy, win);
-}
-
-char text[] = "one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty twentyone twentytwo twentythree";
-
-int content_width, content_height;
-
-void initialize_values() {
-  int i, s_dimen;
-
-	border_color = to_xftcolor(border);
-	bg_color = to_xftcolor(background);
-	fg_color = to_xftcolor(foreground);
-
-  for (i = 0; i < LENGTH(fonts); i++) {
-    if(!(fontset[i] = XftFontOpenName(dpy, screen, fonts[i]))) {
-      fprintf(stderr, "error, cannot load font from name: '%s'\n", fonts[i]);
-      exit(1);
-    }
-  }
-
-  int len = strlen(text);
-  content_width = width - padding_left - padding_right;
-  int lines = 0;
-  lines = make_line_list(text, len, content_width);
-
-  if (height == 0) {
-    XWindowChanges props;
-    height = (lines * line_height) + padding_top + padding_bottom;
-    props.height = height;
-    XConfigureWindow(dpy, win, CWHeight, &props);
-  }
-
-	if (x < 0) {
-    s_dimen = DisplayWidth(dpy, screen);
-    x = s_dimen - width + x;
-  }
-
-	if (y < 0) {
-    s_dimen = DisplayHeight(dpy, screen);
-    y = s_dimen - height + y;
-  }
 }
 
 int main() {

@@ -1,10 +1,11 @@
 # Global
   - [X] Make simple floating box
   - [X] Display text
+  - [X] Simple word wrapping
+  - [ ] Fix word wrap issue for words bigger than content width
   - [ ] Create cli args for configuring
     - [ ] Position and dimensions
     - [ ] Percentage position and dimensions
-  - [ ] Key bindings ()
   - [ ] Read from stdin and keep alive till the stream is alive
   - [ ] Some kind of templating language to format the string
 
