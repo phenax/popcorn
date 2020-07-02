@@ -47,7 +47,7 @@ int get_textwidth(const char * text, unsigned int len) {
 	return ext.xOff;
 }
 
-int make_line_list(char* text, int length, int wrap_width) {
+int word_wrap(char* text, int length, int wrap_width) {
 	int i;
 	char buffer[length + 1];
 
@@ -61,30 +61,35 @@ int make_line_list(char* text, int length, int wrap_width) {
       case '\0':
         width = get_textwidth(buffer, bufflength);
 
-        /*printf("%s\n", buffer);*/
+        printf("%s\n", buffer);
 
         if (width > wrap_width) {
+          lines_count++;
+
           if (previous_space != 0) {
             text[previous_space] = '\n';
-            lines_count++;
-
             for (bufflength = 0; bufflength < i - previous_space; bufflength++) {
               buffer[bufflength] = text[bufflength + previous_space];
             }
-
-            break;
+          } else {
+            text[i] = '\n';
           }
+
+          previous_space = 0;
+          break;
+        } else {
+          previous_space = i;
         }
 
         buffer[bufflength++] = text[i];
         buffer[bufflength] = '\0';
 
-        previous_space = i;
         break;
       case '\n':
         lines_count++;
         buffer[0] = '\0';
         bufflength = 0;
+        previous_space = 0;
         break;
       default:
         buffer[bufflength++] = text[i];
@@ -158,9 +163,8 @@ void initialize_values() {
   }
 
   int len = strlen(text);
-  int lines = 0;
   content_width = width - padding_left - padding_right;
-  lines = make_line_list(text, len, content_width);
+  int lines = word_wrap(text, len, content_width);
 
   if (height == 0) {
     height = (lines * line_height) + padding_top + padding_bottom;
