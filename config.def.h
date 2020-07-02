@@ -24,8 +24,3 @@ char* foreground = "#5555ff";
 char* border = "#ff5555";
 int border_width = 5;
 
-// Define normal mode key bindings here
-//Key keys[] = {
-  //{ Mod1Mask,  XK_y,             cmd("notify-send hello") },
-//};
-

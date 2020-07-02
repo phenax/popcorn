@@ -210,6 +210,11 @@ void create_popup_window() {
   XSelectInput(dpy, root, wa.event_mask);
   XSetWindowBorderWidth(dpy, win, border_width);
 
+  XClassHint class = {"popcorn", "Popcorn"};
+
+  XSetClassHint(dpy, win, &class);
+
+
   XMapRaised(dpy, win);
 }
 
