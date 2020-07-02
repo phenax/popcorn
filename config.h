@@ -11,10 +11,12 @@ static int y = 30;
 static int width = 400;
 static int height = 100;
 
-static int padding_top = 30;
+static int padding_top = 20;
 static int padding_bottom = 100;
 static int padding_left = 20;
-static int padding_right = 50;
+static int padding_right = 20;
+
+static int line_height = 20;
 
 static const char *background = "#520053";
 static const char *foreground = "#ffffff";

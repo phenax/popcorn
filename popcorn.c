@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <strings.h>
+#include <ctype.h>
 #include <pthread.h>
 
 #include <X11/Xlib.h>
@@ -34,12 +35,59 @@ int error_handler(Display *disp, XErrorEvent *xe) {
 }
 
 XftColor to_xftcolor(const char *colorstr) {
-  XftColor dummy, ptr;
+  XftColor ptr;
 	XftColorAllocName(dpy, DefaultVisual(dpy, screen), DefaultColormap(dpy, screen),
 	    colorstr, &ptr);
 	return ptr;
 }
 
+int get_textwidth(const char * text, unsigned int len) {
+	XGlyphInfo ext;
+	XftTextExtentsUtf8(dpy, fontset[0], (XftChar8*) text, len, &ext);
+	return ext.xOff;
+}
+
+void make_line_list(char* text, int length, int wrap_width) {
+	int i; //, length = strlen(text);
+	char buffer[length];
+
+  int lines_count = 0, bufflength = 0;
+  int width, previous_space = 0;
+
+	for(i = 0; i < length; i++) {
+	  // TODO: Case when a word is too big
+	  switch(text[i]) {
+      case ' ':
+        width = get_textwidth(buffer, bufflength);
+
+        if (width > wrap_width) {
+          if (previous_space != 0) {
+            text[previous_space] = '\n';
+
+            for (bufflength = 0; bufflength < i - previous_space; bufflength++) {
+              buffer[bufflength] = text[bufflength + previous_space];
+            }
+
+            break;
+          }
+        }
+
+        buffer[bufflength++] = text[i];
+        buffer[bufflength] = '\0';
+
+        previous_space = i;
+        break;
+      case '\n':
+      case '\0':
+        buffer[0] = '\0';
+        bufflength = 0;
+        break;
+      default:
+        buffer[bufflength++] = text[i];
+        buffer[bufflength] = '\0';
+    }
+  }
+}
 
 void draw_popup_text(char * text) {
   int len;
@@ -57,7 +105,35 @@ void draw_popup_text(char * text) {
 	XSetBackground(dpy, gc, fg_color.pixel);
 
   len = strlen(text);
-  XftDrawStringUtf8(xftdraw, &fg_color, fontset[0], padding_left, padding_top, (XftChar8 *) text, len);
+
+  char buffer[len];
+  int bufflen = 0;
+
+  int x = padding_left;
+  int y = padding_top;
+  int content_width = width - padding_left - padding_right;
+  int height = padding_top + padding_bottom;
+
+  make_line_list(text, len, content_width);
+
+  y += fontset[0]->ascent;
+  for (int i = 0; i < len; i++) {
+    if (text[i] == '\n' || text[i] == '\0') {
+      XftDrawStringUtf8(xftdraw, &fg_color, fontset[0], x, y, (XftChar8 *) buffer, bufflen);
+      y += line_height;
+      height += line_height;
+      buffer[0] = '\0';
+      bufflen = 0;
+      continue;
+    }
+
+    buffer[bufflen++] = text[i];
+    buffer[bufflen] = '\0';
+  }
+
+	XDrawRectangle(dpy, win, gc, padding_left, padding_top, content_width, height);
+
+  // TODO: Set box height
 
   if (xftdraw) {
 		XftDrawDestroy(xftdraw);
@@ -65,7 +141,6 @@ void draw_popup_text(char * text) {
 }
 
 void draw_popup() {
-  Window root_win;
   XSetWindowAttributes wa;
 
   wa.override_redirect = 1;
@@ -94,9 +169,7 @@ void initialize_values() {
 	bg_color = to_xftcolor(background);
 	fg_color = to_xftcolor(foreground);
 
-	XftFont * font = NULL;
-
-  for (int i = 0; i < LENGTH(fonts); i++) {
+  for (i = 0; i < LENGTH(fonts); i++) {
     if(!(fontset[i] = XftFontOpenName(dpy, screen, fonts[i]))) {
       fprintf(stderr, "error, cannot load font from name: '%s'\n", fonts[i]);
       exit(1);
@@ -128,6 +201,13 @@ int main() {
   initialize_values();
 
   draw_popup();
+  
+  char text[] = "Hell world nice wow broHell world nice wow wwwww 1broHe ll world nice wow broHell world nice wow broHell world nice wow broHell world nice wow broHell world nice wow broHell world nice wow broHell world nice wow broHell world nice wow bro";
+  /*make_line_list(text, 500);*/
+
+  /*printf("%s\n", text);*/
+
+  /*return 0;*/
 
   /* main event loop */
   XEvent ev;
@@ -138,7 +218,7 @@ int main() {
 
     switch (ev.type) {
       case Expose:
-        draw_popup_text("Hello world");
+        draw_popup_text(text);
         break;
       case VisibilityNotify:
         break;
