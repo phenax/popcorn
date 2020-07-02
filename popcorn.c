@@ -10,7 +10,6 @@
 #include <X11/Xutil.h>
 #include <X11/Xft/Xft.h>
 
-#define VERSION "0.0.1"
 #define MAX_TEXT_SIZE 500
 
 #include "config.h"
@@ -18,13 +17,15 @@
 #define LENGTH(X) (sizeof X / sizeof X[0])
 #define CLEANMASK(mask) (mask & ~LockMask & (ShiftMask|ControlMask|Mod1Mask|Mod2Mask|Mod3Mask|Mod4Mask|Mod5Mask))
 
-
 Display *dpy;
 Window root, win;
 int screen;
 int content_width, content_height;
 XftColor bg_color, border_color, fg_color;
 XftFont* fontset[5];
+pthread_t reader_thread;
+
+int auto_height = 0;
 
 char text[MAX_TEXT_SIZE];
 
@@ -107,35 +108,55 @@ int word_wrap(char* text, int length, int wrap_width) {
   return lines_count + (strlen(buffer) > 0);
 }
 
-void draw_popup_text(char* text) {
-  int len;
+void recalculate() {
+  int s_dimen, len = strlen(text);
+  content_width = width - padding_left - padding_right;
+  int lines;
+
+  if (win) {
+    lines = word_wrap(text, len, content_width);
+
+    if (auto_height) {
+      height = (lines * line_height) + padding_top + padding_bottom;
+      XWindowChanges props;
+      props.height = height;
+      XConfigureWindow(dpy, win, CWHeight, &props);
+    }
+  }
+
+	if (x < 0) {
+    s_dimen = DisplayWidth(dpy, screen);
+    x = s_dimen - width + x;
+  }
+
+	if (y < 0) {
+    s_dimen = DisplayHeight(dpy, screen);
+    y = s_dimen - height + y;
+  }
+}
+
+void draw_popup_text() {
+  if (!win) return;
+  recalculate();
 
   XftDraw* xftdraw = XftDrawCreate(dpy, win,
       DefaultVisual(dpy, screen),
       DefaultColormap(dpy, screen));
 
-  XGCValues gr_values;
-  gr_values.foreground = fg_color.pixel;
-  gr_values.background = bg_color.pixel;
-  GC gc = XCreateGC(dpy, win, GCForeground|GCBackground, &gr_values);
-
-	XSetForeground(dpy, gc, fg_color.pixel);
-	XSetBackground(dpy, gc, fg_color.pixel);
-
-  len = strlen(text);
+  int len = strlen(text);
 
   char buffer[len + 1];
   int bufflen = 0;
 
-  int x = padding_left;
-  int y = padding_top;
+  int tx = padding_left;
+  int ty = padding_top;
   int content_height = 0;
 
-  y += fontset[0]->ascent;
+  ty += fontset[0]->ascent;
   for (int i = 0; i <= len; i++) {
     if (text[i] == '\n' || text[i] == '\0') {
-      XftDrawStringUtf8(xftdraw, &fg_color, fontset[0], x, y, (XftChar8 *) buffer, bufflen);
-      y += line_height;
+      XftDrawStringUtf8(xftdraw, &fg_color, fontset[0], tx, ty, (XftChar8 *) buffer, bufflen);
+      ty += line_height;
       content_height += line_height;
       buffer[0] = '\0';
       bufflen = 0;
@@ -151,12 +172,12 @@ void draw_popup_text(char* text) {
   }
 }
 
-void initialize_values() {
-  int i, s_dimen;
+void setup() {
+  int i;
 
-	border_color = to_xftcolor(border);
-	bg_color = to_xftcolor(background);
 	fg_color = to_xftcolor(foreground);
+	bg_color = to_xftcolor(background);
+	border_color = to_xftcolor(border);
 
   for (i = 0; i < LENGTH(fonts); i++) {
     if(!(fontset[i] = XftFontOpenName(dpy, screen, fonts[i]))) {
@@ -165,26 +186,12 @@ void initialize_values() {
     }
   }
 
-  int len = strlen(text);
-  content_width = width - padding_left - padding_right;
-  int lines = word_wrap(text, len, content_width);
+  auto_height = height == 0;
 
-  if (height == 0) {
-    height = (lines * line_height) + padding_top + padding_bottom;
-  }
-
-	if (x < 0) {
-    s_dimen = DisplayWidth(dpy, screen);
-    x = s_dimen - width + x;
-  }
-
-	if (y < 0) {
-    s_dimen = DisplayHeight(dpy, screen);
-    y = s_dimen - height + y;
-  }
+  recalculate();
 }
 
-void draw_popup() {
+void create_popup_window() {
   XSetWindowAttributes wa;
 
   wa.override_redirect = 1;
@@ -194,7 +201,7 @@ void draw_popup() {
 
   win = XCreateWindow(dpy, root,
       x, y,
-      width, height,
+      width, auto_height ? line_height : height,
       0, DefaultDepth(dpy, screen),
       CopyFromParent,
       DefaultVisual(dpy, screen),
@@ -207,17 +214,15 @@ void draw_popup() {
 }
 
 void* input_reader() {
-  int i;
   char buf[MAX_TEXT_SIZE];
 
   while (fgets(buf, sizeof buf, stdin)) {
     strcat(text, buf);
+    /*draw_popup_text();*/
   }
 
   exit(0);
 }
-
-pthread_t reader_thread;
 
 void read_cli_args(int argc, char** argv) {
   for (int i = 1; i < argc; i++) {
@@ -239,7 +244,7 @@ void read_cli_args(int argc, char** argv) {
     } else if (!strcmp(argv[i],        "--width")) {
       width = atoi(argv[++i]);
     } else if (!strcmp(argv[i],        "--height")) {
-      height = atoi(argv[++i]);       
+      height = atoi(argv[++i]);
     } else if (!strcmp(argv[i],        "--padding-top")) {
       padding_top = atoi(argv[++i]);
     } else if (!strcmp(argv[i],        "--padding-bottom")) {
@@ -260,18 +265,16 @@ void read_cli_args(int argc, char** argv) {
 }
 
 int main(int argc, char** argv) {
+  /*XSetErrorHandler(error_handler);*/
   read_cli_args(argc, argv);
-
-  XSetErrorHandler(error_handler);
+  pthread_create(&reader_thread, NULL, input_reader, 0);
 
   dpy = XOpenDisplay(0);
   root = RootWindow(dpy, screen);
 
-  pthread_create(&reader_thread, NULL, input_reader, 0);
+  setup();
 
-  initialize_values();
-
-  draw_popup();
+  create_popup_window();
 
   /* main event loop */
   XEvent ev;
@@ -282,7 +285,7 @@ int main(int argc, char** argv) {
 
     switch (ev.type) {
       case Expose:
-        draw_popup_text(text);
+        draw_popup_text();
         break;
       case VisibilityNotify:
         break;
