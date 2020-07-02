@@ -22,9 +22,9 @@ Window root, win;
 int screen;
 int content_width, content_height;
 XftColor bg_color, border_color, fg_color;
-XftFont * fontset[5];
+XftFont* fontset[5];
 
-char text[] = "one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty twentyone twentytwo twentythree";
+char text[MAX_STRING_SIZE];
 
 int error_handler(Display *disp, XErrorEvent *xe) {
   switch(xe->error_code) {
@@ -44,7 +44,7 @@ XftColor to_xftcolor(const char *colorstr) {
 	return ptr;
 }
 
-int get_textwidth(const char * text, unsigned int len) {
+int get_textwidth(const char* text, unsigned int len) {
 	XGlyphInfo ext;
 	XftTextExtentsUtf8(dpy, fontset[0], (XftChar8*) text, len, &ext);
 	return ext.xOff;
@@ -105,10 +105,10 @@ int word_wrap(char* text, int length, int wrap_width) {
   return lines_count + (strlen(buffer) > 0);
 }
 
-void draw_popup_text(char * text) {
+void draw_popup_text(char* text) {
   int len;
 
-  XftDraw * xftdraw = XftDrawCreate(dpy, win,
+  XftDraw* xftdraw = XftDrawCreate(dpy, win,
       DefaultVisual(dpy, screen),
       DefaultColormap(dpy, screen));
 
@@ -122,7 +122,7 @@ void draw_popup_text(char * text) {
 
   len = strlen(text);
 
-  char buffer[len];
+  char buffer[len + 1];
   int bufflen = 0;
 
   int x = padding_left;
@@ -204,13 +204,25 @@ void draw_popup() {
   XMapRaised(dpy, win);
 }
 
+void* input_reader() {
+  int i;
+  char buf[MAX_STRING_SIZE];
+
+  while (fgets(buf, sizeof buf, stdin)) {
+    strncat(text, buf, MAX_STRING_SIZE);
+  }
+
+  exit(0);
+}
+
 int main() {
   XSetErrorHandler(error_handler);
 
-  int running = 2;
-
   dpy = XOpenDisplay(0);
   root = RootWindow(dpy, screen);
+
+  pthread_t reader_thread;
+  pthread_create(&reader_thread, NULL, input_reader, 0);
 
   initialize_values();
 
@@ -220,7 +232,7 @@ int main() {
   XEvent ev;
 	XSync(dpy, 0);
 
-  while (running) {
+  while (1) {
     XNextEvent(dpy, &ev);
 
     switch (ev.type) {
