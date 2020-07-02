@@ -49,16 +49,19 @@ int get_textwidth(const char * text, unsigned int len) {
 
 void make_line_list(char* text, int length, int wrap_width) {
 	int i; //, length = strlen(text);
-	char buffer[length];
+	char buffer[length + 1];
 
   int lines_count = 0, bufflength = 0;
   int width, previous_space = 0;
 
-	for(i = 0; i < length; i++) {
+	for(i = 0; i <= length; i++) {
 	  // TODO: Case when a word is too big
 	  switch(text[i]) {
       case ' ':
+      case '\0':
         width = get_textwidth(buffer, bufflength);
+
+        printf("%s\n", buffer);
 
         if (width > wrap_width) {
           if (previous_space != 0) {
@@ -78,7 +81,6 @@ void make_line_list(char* text, int length, int wrap_width) {
         previous_space = i;
         break;
       case '\n':
-      case '\0':
         buffer[0] = '\0';
         bufflength = 0;
         break;
@@ -117,7 +119,7 @@ void draw_popup_text(char * text) {
   make_line_list(text, len, content_width);
 
   y += fontset[0]->ascent;
-  for (int i = 0; i < len; i++) {
+  for (int i = 0; i <= len; i++) {
     if (text[i] == '\n' || text[i] == '\0') {
       XftDrawStringUtf8(xftdraw, &fg_color, fontset[0], x, y, (XftChar8 *) buffer, bufflen);
       y += line_height;
@@ -133,7 +135,9 @@ void draw_popup_text(char * text) {
 
 	XDrawRectangle(dpy, win, gc, padding_left, padding_top, content_width, height);
 
-  // TODO: Set box height
+  /*XWindowChanges props;*/
+  /*props.height = height;*/
+  /*XConfigureWindow(dpy, win, CWHeight, &props);*/
 
   if (xftdraw) {
 		XftDrawDestroy(xftdraw);
@@ -202,7 +206,7 @@ int main() {
 
   draw_popup();
   
-  char text[] = "Hell world nice wow broHell world nice wow wwwww 1broHe ll world nice wow broHell world nice wow broHell world nice wow broHell world nice wow broHell world nice wow broHell world nice wow broHell world nice wow broHell world nice wow bro";
+  char text[] = "one";
   /*make_line_list(text, 500);*/
 
   /*printf("%s\n", text);*/
