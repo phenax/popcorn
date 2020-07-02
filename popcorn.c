@@ -61,7 +61,7 @@ int word_wrap(char* text, int length, int wrap_width) {
       case '\0':
         width = get_textwidth(buffer, bufflength);
 
-        printf("%s\n", buffer);
+        /*printf("%s\n", buffer);*/
 
         if (width > wrap_width) {
           lines_count++;

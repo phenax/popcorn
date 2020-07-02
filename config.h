@@ -8,7 +8,7 @@ static const char *fonts[] = {
 // Default config values
 static int x = -30;
 static int y = 30;
-static int width = 100;
+static int width = 500;
 static int height = 0;
 
 static int padding_top = 20;
