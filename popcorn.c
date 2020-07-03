@@ -149,10 +149,9 @@ void draw_popup_text() {
   int bufflen = 0;
 
   int tx = padding_left;
-  int ty = padding_top;
+  int ty = padding_top + fontset[0]->ascent;
   int content_height = 0;
 
-  ty += fontset[0]->ascent;
   for (int i = 0; i <= len; i++) {
     if (text[i] == '\n' || text[i] == '\0') {
       XftDrawStringUtf8(xftdraw, &fg_color, fontset[0], tx, ty, (XftChar8 *) buffer, bufflen);
@@ -170,6 +169,8 @@ void draw_popup_text() {
   if (xftdraw) {
 		XftDrawDestroy(xftdraw);
   }
+
+	XSync(dpy, 0);
 }
 
 void setup() {
@@ -219,10 +220,10 @@ void create_popup_window() {
 
 void* input_reader() {
   char buf[MAX_TEXT_SIZE];
-
+  
   while (fgets(buf, sizeof buf, stdin)) {
     strcat(text, buf);
-    /*draw_popup_text();*/
+    draw_popup_text();
   }
 
   exit(0);

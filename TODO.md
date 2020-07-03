@@ -7,6 +7,8 @@
   - [ ] Read from stream and update display asynchronously
   - [ ] Load multiple fonts
   - [ ] Fix word wrap issue for words bigger than content width
+  - [ ] Update docs
+  - [ ] To aur
 
 # Cli args
   - [X] Position and dimensions
