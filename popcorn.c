@@ -1,13 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
-#include <strings.h>
-#include <ctype.h>
-#include <pthread.h>
 
 #include <X11/Xlib.h>
-#include <X11/Xutil.h>
 #include <X11/Xft/Xft.h>
 
 #define MAX_TEXT_SIZE 500
@@ -23,11 +18,21 @@ int screen;
 int content_width, content_height;
 XftColor bg_color, border_color, fg_color;
 XftFont* fontset[5];
-pthread_t reader_thread;
 
 int auto_height = 0;
 
 char text[MAX_TEXT_SIZE];
+
+void kill(int exitcode) {
+  XCloseDisplay(dpy);
+
+  if (win) {
+    XUnmapWindow(dpy, win);
+    XDestroyWindow(dpy, win);
+  }
+
+  exit(exitcode);
+}
 
 int error_handler(Display *disp, XErrorEvent *xe) {
   switch(xe->error_code) {
@@ -37,6 +42,7 @@ int error_handler(Display *disp, XErrorEvent *xe) {
   }
 
   printf("popcorn: Something went wrong\n");
+  kill(1);
   return 1;
 }
 
@@ -108,10 +114,39 @@ int word_wrap(char* text, int length, int wrap_width) {
   return lines_count + (strlen(buffer) > 0);
 }
 
+void create_popup_window() {
+  XSetWindowAttributes wa;
+
+  wa.override_redirect = 1;
+	wa.background_pixel = bg_color.pixel;
+	wa.border_pixel = border_color.pixel;
+	wa.event_mask = ExposureMask | VisibilityChangeMask;
+
+  win = XCreateWindow(dpy, root,
+      x, y,
+      width, auto_height ? line_height : height,
+      0, DefaultDepth(dpy, screen),
+      CopyFromParent,
+      DefaultVisual(dpy, screen),
+      CWOverrideRedirect | CWBackPixel | CWBorderPixel | CWEventMask, &wa);
+
+  XSelectInput(dpy, root, wa.event_mask);
+  XSetWindowBorderWidth(dpy, win, border_width);
+
+  XClassHint class = {"popcorn", "Popcorn"};
+  XSetClassHint(dpy, win, &class);
+
+  XMapRaised(dpy, win);
+}
+
 void recalculate() {
   int s_dimen, len = strlen(text);
   content_width = width - padding_left - padding_right;
   int lines;
+
+  if (len > 0 && !win) {
+    create_popup_window();
+  }
 
   if (win) {
     lines = word_wrap(text, len, content_width);
@@ -136,15 +171,15 @@ void recalculate() {
 }
 
 void draw_popup_text() {
-  if (!win) return;
   recalculate();
+
+  if (!win) return;
 
   XftDraw* xftdraw = XftDrawCreate(dpy, win,
       DefaultVisual(dpy, screen),
       DefaultColormap(dpy, screen));
 
   int len = strlen(text);
-
   char buffer[len + 1];
   int bufflen = 0;
 
@@ -170,7 +205,7 @@ void draw_popup_text() {
 		XftDrawDestroy(xftdraw);
   }
 
-	XSync(dpy, 0);
+	XSync(dpy, False);
 }
 
 void setup() {
@@ -183,7 +218,7 @@ void setup() {
   for (i = 0; i < LENGTH(fonts); i++) {
     if(!(fontset[i] = XftFontOpenName(dpy, screen, fonts[i]))) {
       fprintf(stderr, "error, cannot load font from name: '%s'\n", fonts[i]);
-      exit(1);
+      kill(1);
     }
   }
 
@@ -192,33 +227,7 @@ void setup() {
   recalculate();
 }
 
-void create_popup_window() {
-  XSetWindowAttributes wa;
-
-  wa.override_redirect = 1;
-	wa.background_pixel = bg_color.pixel;
-	wa.border_pixel = border_color.pixel;
-	wa.event_mask = ExposureMask | VisibilityChangeMask | KeyPressMask;
-
-  win = XCreateWindow(dpy, root,
-      x, y,
-      width, auto_height ? line_height : height,
-      0, DefaultDepth(dpy, screen),
-      CopyFromParent,
-      DefaultVisual(dpy, screen),
-      CWOverrideRedirect | CWBackPixel | CWBorderPixel | CWEventMask, &wa);
-
-  XSelectInput(dpy, root, wa.event_mask);
-  XSetWindowBorderWidth(dpy, win, border_width);
-
-  XClassHint class = {"popcorn", "Popcorn"};
-
-  XSetClassHint(dpy, win, &class);
-
-  XMapRaised(dpy, win);
-}
-
-void* input_reader() {
+void input_reader() {
   char buf[MAX_TEXT_SIZE];
   
   while (fgets(buf, sizeof buf, stdin)) {
@@ -226,7 +235,7 @@ void* input_reader() {
     draw_popup_text();
   }
 
-  exit(0);
+  kill(0);
 }
 
 void read_cli_args(int argc, char** argv) {
@@ -270,36 +279,17 @@ void read_cli_args(int argc, char** argv) {
 }
 
 int main(int argc, char** argv) {
-  /*XSetErrorHandler(error_handler);*/
+  XSetErrorHandler(error_handler);
+
   read_cli_args(argc, argv);
-  pthread_create(&reader_thread, NULL, input_reader, 0);
 
   dpy = XOpenDisplay(0);
   root = RootWindow(dpy, screen);
 
   setup();
 
-  create_popup_window();
-
-  /* main event loop */
-  XEvent ev;
 	XSync(dpy, 0);
 
-  while (1) {
-    XNextEvent(dpy, &ev);
-
-    switch (ev.type) {
-      case Expose:
-        draw_popup_text();
-        break;
-      case VisibilityNotify:
-        break;
-      case KeyPress: {
-        break;
-      }
-    }
-  }
-
-  XCloseDisplay(dpy);
+	input_reader();
 }
 
