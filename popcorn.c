@@ -120,7 +120,6 @@ void create_popup_window() {
   wa.override_redirect = 1;
 	wa.background_pixel = bg_color.pixel;
 	wa.border_pixel = border_color.pixel;
-	wa.event_mask = ExposureMask | VisibilityChangeMask;
 
   win = XCreateWindow(dpy, root,
       x, y,
@@ -128,9 +127,8 @@ void create_popup_window() {
       0, DefaultDepth(dpy, screen),
       CopyFromParent,
       DefaultVisual(dpy, screen),
-      CWOverrideRedirect | CWBackPixel | CWBorderPixel | CWEventMask, &wa);
+      CWOverrideRedirect | CWBackPixel | CWBorderPixel, &wa);
 
-  XSelectInput(dpy, root, wa.event_mask);
   XSetWindowBorderWidth(dpy, win, border_width);
 
   XClassHint class = {"popcorn", "Popcorn"};
