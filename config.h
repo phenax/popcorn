@@ -1,8 +1,6 @@
 
 const char *fonts[] = {
   "monospace:size=10",
-  "Font Awesome 5 Free:size=10",
-  "Symbols Nerd Font:size=10",
 };
 
 // Default config values

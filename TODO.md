@@ -4,11 +4,15 @@
   - [X] Simple word wrapping
   - [X] Read from stdin and keep alive till the stream is alive
   - [X] Window class and other properties
-  - [ ] Read from stream and update display asynchronously
+  - [X] Read from stream and update display asynchronously
   - [ ] Load multiple fonts
   - [ ] Fix word wrap issue for words bigger than content width
-  - [ ] Update docs
-  - [ ] To aur
+  - [ ] Package for aur
+
+# Docs
+  - [ ] readme usage
+  - [ ] man page
+  - [ ] use cases
 
 # Cli args
   - [X] Position and dimensions

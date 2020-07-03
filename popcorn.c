@@ -5,7 +5,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xft/Xft.h>
 
-#define MAX_TEXT_SIZE 500
+#define MAX_TEXT_SIZE 1024
 
 #include "config.h"
 
@@ -48,27 +48,26 @@ int error_handler(Display *disp, XErrorEvent *xe) {
 
 XftColor to_xftcolor(const char *colorstr) {
   XftColor ptr;
-	XftColorAllocName(dpy, DefaultVisual(dpy, screen), DefaultColormap(dpy, screen),
-	    colorstr, &ptr);
-	return ptr;
+  XftColorAllocName(dpy, DefaultVisual(dpy, screen), DefaultColormap(dpy, screen),
+      colorstr, &ptr);
+  return ptr;
 }
 
 int get_textwidth(const char* text, unsigned int len) {
-	XGlyphInfo ext;
-	XftTextExtentsUtf8(dpy, fontset[0], (XftChar8*) text, len, &ext);
-	return ext.xOff;
+  XGlyphInfo ext;
+  XftTextExtentsUtf8(dpy, fontset[0], (XftChar8*) text, len, &ext);
+  return ext.xOff;
 }
 
 int word_wrap(char* text, int length, int wrap_width) {
-	int i;
-	char buffer[length + 1];
+  int i;
+  char buffer[length + 1];
 
   int lines_count = 0, bufflength = 0;
   int width, previous_space = 0;
 
-	for(i = 0; i <= length; i++) {
-	  // TODO: Case when a word is too big, currently it just overflows
-	  switch(text[i]) {
+  for(i = 0; i <= length; i++) {
+    switch(text[i]) {
       case ' ':
       case '\0':
         width = get_textwidth(buffer, bufflength);
@@ -118,8 +117,8 @@ void create_popup_window() {
   XSetWindowAttributes wa;
 
   wa.override_redirect = 1;
-	wa.background_pixel = bg_color.pixel;
-	wa.border_pixel = border_color.pixel;
+  wa.background_pixel = bg_color.pixel;
+  wa.border_pixel = border_color.pixel;
 
   win = XCreateWindow(dpy, root,
       x, y,
@@ -157,12 +156,12 @@ void recalculate() {
     }
   }
 
-	if (x < 0) {
+  if (x < 0) {
     s_dimen = DisplayWidth(dpy, screen);
     x = s_dimen - width + x;
   }
 
-	if (y < 0) {
+  if (y < 0) {
     s_dimen = DisplayHeight(dpy, screen);
     y = s_dimen - height + y;
   }
@@ -200,18 +199,18 @@ void draw_popup_text() {
   }
 
   if (xftdraw) {
-		XftDrawDestroy(xftdraw);
+    XftDrawDestroy(xftdraw);
   }
 
-	XSync(dpy, False);
+  XSync(dpy, False);
 }
 
 void setup() {
   int i;
 
-	fg_color = to_xftcolor(foreground);
-	bg_color = to_xftcolor(background);
-	border_color = to_xftcolor(border);
+  fg_color = to_xftcolor(foreground);
+  bg_color = to_xftcolor(background);
+  border_color = to_xftcolor(border);
 
   for (i = 0; i < LENGTH(fonts); i++) {
     if(!(fontset[i] = XftFontOpenName(dpy, screen, fonts[i]))) {
@@ -223,6 +222,8 @@ void setup() {
   auto_height = height == 0;
 
   recalculate();
+
+  XSync(dpy, 0);
 }
 
 void input_reader() {
@@ -238,9 +239,9 @@ void input_reader() {
 
 void read_cli_args(int argc, char** argv) {
   for (int i = 1; i < argc; i++) {
-		if (!strcmp(argv[i], "-v")) {
-			puts("popcorn-"VERSION);
-			exit(0);
+    if (!strcmp(argv[i], "-v")) {
+      puts("popcorn-"VERSION);
+      exit(0);
     } else if (!strcmp(argv[i],        "--fg")) {
       foreground = argv[++i];
     } else if (!strcmp(argv[i],        "--bg")) {
@@ -286,8 +287,6 @@ int main(int argc, char** argv) {
 
   setup();
 
-	XSync(dpy, 0);
-
-	input_reader();
+  input_reader();
 }
 
