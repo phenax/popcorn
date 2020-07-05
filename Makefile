@@ -30,9 +30,9 @@ install: all
 	mkdir -p ${DESTDIR}${PREFIX}/bin
 	cp -f popcorn ${DESTDIR}${PREFIX}/bin
 	chmod 755 ${DESTDIR}${PREFIX}/bin/popcorn
-	mkdir -p ${DESTDIR}${MANPREFIX}/man1
-	sed "s/VERSION/${VERSION}/g" < popcorn.1 > ${DESTDIR}${MANPREFIX}/man1/popcorn.1
-	chmod 644 ${DESTDIR}${MANPREFIX}/man1/popcorn.1
+	#mkdir -p ${DESTDIR}${MANPREFIX}/man1
+	#sed "s/VERSION/${VERSION}/g" < popcorn.1 > ${DESTDIR}${MANPREFIX}/man1/popcorn.1
+	#chmod 644 ${DESTDIR}${MANPREFIX}/man1/popcorn.1
 
 uninstall:
 	rm -f ${DESTDIR}${PREFIX}/bin/popcorn\

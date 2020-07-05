@@ -18,6 +18,10 @@ int screen;
 int content_width, content_height;
 XftColor bg_color, border_color, fg_color;
 XftFont* fontset[5];
+Visual * visual;
+int depth;
+Colormap cmap;
+int useargb;
 
 int auto_height = 0;
 
@@ -48,8 +52,7 @@ int error_handler(Display *disp, XErrorEvent *xe) {
 
 XftColor to_xftcolor(const char *colorstr) {
   XftColor ptr;
-  XftColorAllocName(dpy, DefaultVisual(dpy, screen), DefaultColormap(dpy, screen),
-      colorstr, &ptr);
+  XftColorAllocName(dpy, visual, cmap, colorstr, &ptr);
   return ptr;
 }
 
@@ -113,20 +116,52 @@ int word_wrap(char* text, int length, int wrap_width) {
   return lines_count + (strlen(buffer) > 0);
 }
 
+void xinitvisual() {
+	XVisualInfo *infos;
+	XRenderPictFormat *fmt;
+	int nitems;
+	int i;
+
+	XVisualInfo tpl = { .screen = screen, .depth = 32, .class = TrueColor };
+	long masks = VisualScreenMask | VisualDepthMask | VisualClassMask;
+
+	infos = XGetVisualInfo(dpy, masks, &tpl, &nitems);
+	visual = NULL;
+	for(i = 0; i < nitems; i ++) {
+		fmt = XRenderFindVisualFormat(dpy, infos[i].visual);
+		if (fmt->type == PictTypeDirect && fmt->direct.alphaMask) {
+			visual = infos[i].visual;
+			depth = infos[i].depth;
+			cmap = XCreateColormap(dpy, root, visual, AllocNone);
+			useargb = 1;
+			break;
+		}
+	}
+
+	XFree(infos);
+
+	if (!visual) {
+		visual = DefaultVisual(dpy, screen);
+		depth = DefaultDepth(dpy, screen);
+		cmap = DefaultColormap(dpy, screen);
+	}
+}
+
 void create_popup_window() {
   XSetWindowAttributes wa;
 
   wa.override_redirect = 1;
-  wa.background_pixel = bg_color.pixel;
+  wa.background_pixel = (bg_color.pixel & 0x00ffffffU) | (alpha << 24);
   wa.border_pixel = border_color.pixel;
+  wa.colormap = cmap;
 
   win = XCreateWindow(dpy, root,
       x, y,
       width, auto_height ? line_height : height,
-      0, DefaultDepth(dpy, screen),
-      CopyFromParent,
-      DefaultVisual(dpy, screen),
-      CWOverrideRedirect | CWBackPixel | CWBorderPixel, &wa);
+      0, depth,
+      InputOutput,
+      visual,
+      CWOverrideRedirect | CWBackPixel | CWBorderPixel | CWColormap, &wa);
 
   XSetWindowBorderWidth(dpy, win, border_width);
 
@@ -172,9 +207,7 @@ void draw_popup_text() {
 
   if (!win) return;
 
-  XftDraw* xftdraw = XftDrawCreate(dpy, win,
-      DefaultVisual(dpy, screen),
-      DefaultColormap(dpy, screen));
+  XftDraw* xftdraw = XftDrawCreate(dpy, win, visual, cmap);
 
   int len = strlen(text);
   char buffer[len + 1];
@@ -207,6 +240,7 @@ void draw_popup_text() {
 
 void setup() {
   int i;
+  xinitvisual();
 
   fg_color = to_xftcolor(foreground);
   bg_color = to_xftcolor(background);

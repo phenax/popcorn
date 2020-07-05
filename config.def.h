@@ -16,6 +16,9 @@ int padding_right = 20;
 
 int line_height = 20;
 
+// Opacity
+int alpha = 0xff;
+
 char* background = "#4e3aA3";
 char* foreground = "#d8dee9";
 

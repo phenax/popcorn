@@ -5,6 +5,7 @@
   - [X] Read from stdin and keep alive till the stream is alive
   - [X] Window class and other properties
   - [X] Read from stream and update display asynchronously
+  - [X] Alpha
   - [ ] Load multiple fonts
   - [ ] Fix word wrap issue for words bigger than content width
   - [ ] Package for aur
