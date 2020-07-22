@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Dependencies: tiramisu, popcorn, jq
+
+PADDING_TOP=30;
+
+notification_body() {
+  echo "$1:";
+  echo "$2";
+  sleep 5;
+}
+
+show_popup() {
+  popcorn -y $PADDING_TOP;
+}
+
+tiramisu | while read line; do
+  app_name=$(echo "$line" | jq -r .app_name);
+  summary=$(echo "$line" | jq -r .summary);
+  #timeout=$(echo "$line" | jq -r .timeout);
+
+  notification_body "$app_name" "$summary" | show_popup &
+done;
+

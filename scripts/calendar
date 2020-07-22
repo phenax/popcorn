@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Dependencies: date, popcorn, cal
+
+calendar() {
+  date +"%a, %e %b - %I:%M %p";
+  echo "";
+  cal;
+}
+
+
+padd=40;
+(calendar; sleep 3;) | popcorn \
+  --width 260 \
+  --padding-top $padd \
+  --padding-left $padd \
+  --padding-bottom 20 \
+  --padding-right $padd \
+  --bg "#0f0c19" \
+  --font "JetBrains Mono:size=10";
+
