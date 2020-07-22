@@ -23,6 +23,8 @@ int depth;
 Colormap cmap;
 int useargb;
 
+int verbose_output = 0;
+
 int auto_height = 0;
 
 char text[MAX_TEXT_SIZE];
@@ -235,6 +237,10 @@ void draw_popup_text() {
     XftDrawDestroy(xftdraw);
   }
 
+  if (verbose_output) {
+    printf("%d  %d\n", height, len);
+  }
+
   XSync(dpy, False);
 }
 
@@ -280,6 +286,8 @@ void read_cli_args(int argc, char** argv) {
       foreground = argv[++i];
     } else if (!strcmp(argv[i],        "--bg")) {
       background = argv[++i];
+    } else if (!strcmp(argv[i],        "--alpha")) {
+      alpha = atoi(argv[++i]) * 0xff / 100;
     } else if (!strcmp(argv[i],        "--border-color")) {
       border = argv[++i];
     } else if (!strcmp(argv[i],        "--border-size")) {
@@ -304,6 +312,8 @@ void read_cli_args(int argc, char** argv) {
       padding_right = atoi(argv[++i]);
     } else if (!strcmp(argv[i],        "--font")) {
       fonts[0] = argv[++i];
+    } else if (!strcmp(argv[i],        "--verbose")) {
+      verbose_output = 1;
     } else {
       fprintf(stderr, "Invalid arg: %s\n", argv[i]);
       exit(1);

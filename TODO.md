@@ -6,14 +6,17 @@
   - [X] Window class and other properties
   - [X] Read from stream and update display asynchronously
   - [X] Alpha
+  - [X] Alpha cli argument
+  - [ ] Example use case scripts
   - [ ] Load multiple fonts
   - [ ] Fix word wrap issue for words bigger than content width
   - [ ] Package for aur
 
 # Docs
+  - [ ] --help usage info
   - [ ] readme usage
   - [ ] man page
-  - [ ] use cases
+  - [ ] use cases in readme
 
 # Cli args
   - [X] Position and dimensions
