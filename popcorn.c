@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 #include <X11/Xlib.h>
 #include <X11/Xft/Xft.h>
+#include "dtext/dtext.h"
 
 #define MAX_TEXT_SIZE 1024
 
