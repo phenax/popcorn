@@ -7,6 +7,9 @@
   - [X] Read from stream and update display asynchronously
   - [X] Alpha
   - [X] Alpha cli argument
+  - [ ] Change font rendering to dtext
+  - [ ] Click button handler
+  - [ ] Pass x, y to click handler
   - [ ] Example use case scripts
   - [ ] Load multiple fonts
   - [ ] Fix word wrap issue for words bigger than content width
